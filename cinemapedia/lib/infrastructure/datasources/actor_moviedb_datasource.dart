@@ -9,7 +9,7 @@ import 'package:cinemapedia/infrastructure/mappers/actor_mapper.dart';
 import 'package:cinemapedia/infrastructure/models/moviedb/credits_response.dart';
 import 'package:dio/dio.dart';
 
-class ActorMovieDbDatasource extends ActorsDataSource{
+class ActorMovieDbDatasource extends ActorsDataSource {
 
   final dio = Dio(BaseOptions(
     baseUrl: 'https://api.themoviedb.org/3',
@@ -19,29 +19,20 @@ class ActorMovieDbDatasource extends ActorsDataSource{
     }
   ));
 
-  List<Actor> _jsonToCast( Map<String,dynamic> json){
-
-    final moviedbResponse = CreditsResponse.fromJson(json);
-
-    final List<Actor> movies = moviedbResponse.cast
-    .where((moviedb) => moviedb.profilePath != 'no-poster')
-    .map(
-      (moviedb) => ActorMapper.castToEntity(moviedb)  ).toList();
-
-    return movies;
-  }
-
   @override
   Future<List<Actor>> getActorsByMovie(String movieId) async{
-
-    final response = await dio.get('/movie/$movieId/credits');
-
-    if(response.statusCode != 200) throw Exception('Error al obtener el cast');
+    
+    final response = await dio.get(
+      '/movie/$movieId/credits'
+    );
 
     final castResponse = CreditsResponse.fromJson(response.data);
 
-    List<Actor> actors = castResponse.cast.map((cast) => ActorMapper.castToEntity(cast)).toList();
-
+    List<Actor> actors = castResponse.cast.map(
+      (cast) => ActorMapper.castToEntity(cast)
+    ).toList();
+    
     return actors;
   }
+
 }
