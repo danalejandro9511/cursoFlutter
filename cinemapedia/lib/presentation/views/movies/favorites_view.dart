@@ -1,6 +1,8 @@
 import 'package:cinemapedia/presentation/providers/providers.dart';
+import 'package:cinemapedia/presentation/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 
 class FavoritesView extends ConsumerStatefulWidget {
@@ -12,10 +14,28 @@ class FavoritesView extends ConsumerStatefulWidget {
 
 class FavoritesViewState extends ConsumerState<FavoritesView> {
 
+  bool isLastPage = false;
+  bool isLoading = false;
+
   @override
   void initState() {
-    ref.read(favoriteMoviesProvider.notifier).loadNextPage();
+    
     super.initState();
+
+    loadNextPage();
+  }
+
+  void loadNextPage() async{
+
+    if(isLoading || isLastPage) return;
+    isLoading = true;
+
+    final movies = await ref.read(favoriteMoviesProvider.notifier).loadNextPage();
+    isLoading = false;
+
+    if(movies.isEmpty){
+      isLastPage = true;
+    }
   }
 
   @override
@@ -23,18 +43,30 @@ class FavoritesViewState extends ConsumerState<FavoritesView> {
 
     final favoritesMovies = ref.watch(favoriteMoviesProvider).values.toList();
 
+    if(favoritesMovies.isEmpty){
+      final colors = Theme.of(context).colorScheme;
+      return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(Icons.favorite, size: 100, color: colors.primary),
+              Text('No favorites movies', style: TextStyle(fontSize: 20, color: colors.primary),),
+              const SizedBox(height: 20),
+              FilledButton.tonal(
+                onPressed: () => context.go('/home/0'), 
+                child: const Text('Empieza a buscar', style: TextStyle(fontSize: 20)),
+              )
+            ],
+          ),
+      );
+    }
+
 
     return Scaffold(
-      body: ListView.builder(
-          itemCount: favoritesMovies.length,
-          itemBuilder: (context, index) {
-
-            final movie = favoritesMovies[index];
-
-            return ListTile(
-              title: Text(movie.title),
-            );
-          },
+      body: MovieMasonry(
+        loadNextPage: loadNextPage,
+        movies: favoritesMovies
       ),
     );
   }
